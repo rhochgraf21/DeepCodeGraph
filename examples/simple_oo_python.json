@@ -1,0 +1,249 @@
+{
+  "files": {
+    "company.py": {
+      "name": "company.py",
+      "description": "This file defines the Company class, which manages departments and employees within the company.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Company",
+          "description": "Represents a company with departments and employees.",
+          "methods": [
+            {
+              "name": "__init__",
+              "description": "Initializes a Company object with a name and an empty list of departments.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Company"
+            },
+            {
+              "name": "add_department",
+              "description": "Adds a department to the company's list of departments.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "dept",
+                  "type": "Department"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Company"
+            },
+            {
+              "name": "hire_employee",
+              "description": "Hires an employee into a specific department within the company.",
+              "called_functions": [
+                "dept.add_employee"
+              ],
+              "parameters": [
+                {
+                  "name": "dept_name",
+                  "type": "string"
+                },
+                {
+                  "name": "employee",
+                  "type": "Employee"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Company"
+            }
+          ]
+        }
+      ],
+      "globals": [],
+      "imports": [
+        "department",
+        "employee"
+      ]
+    },
+    "person_employee.py": {
+      "name": "person_employee.py",
+      "description": "This file defines two classes, Person and Employee, where Employee inherits from Person. The Person class has a name and a greet method, while the Employee class has a name, employee ID, and a work method.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Person",
+          "description": "Represents a person with a name and a greeting method.",
+          "methods": [
+            {
+              "name": "__init__",
+              "description": "Initializes a Person object with a name.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "self",
+                  "type": "Person"
+                },
+                {
+                  "name": "name",
+                  "type": "string"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Person"
+            },
+            {
+              "name": "greet",
+              "description": "Prints a greeting message including the person's name.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "self",
+                  "type": "Person"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Person"
+            }
+          ]
+        },
+        {
+          "name": "Employee",
+          "description": "Represents an employee, inheriting from the Person class, with an employee ID and a work method.",
+          "methods": [
+            {
+              "name": "__init__",
+              "description": "Initializes an Employee object with a name and an employee ID, calling the parent class's constructor.",
+              "called_functions": [
+                "Person.__init__"
+              ],
+              "parameters": [
+                {
+                  "name": "self",
+                  "type": "Employee"
+                },
+                {
+                  "name": "name",
+                  "type": "string"
+                },
+                {
+                  "name": "employee_id",
+                  "type": "any"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Employee"
+            },
+            {
+              "name": "work",
+              "description": "Prints a message indicating that the employee is working.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "self",
+                  "type": "Employee"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Employee"
+            }
+          ]
+        }
+      ],
+      "globals": [],
+      "imports": []
+    },
+    "department.py": {
+      "name": "department.py",
+      "description": "This file defines a Department class that can store and manage a list of employees.",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Department",
+          "description": "Represents a department with a name and a list of employees.",
+          "methods": [
+            {
+              "name": "__init__",
+              "description": "Initializes a new Department object with a name and an empty list of employees.",
+              "called_functions": [],
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "str"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Department"
+            },
+            {
+              "name": "add_employee",
+              "description": "Adds an employee to the department's list of employees.",
+              "called_functions": [
+                "append"
+              ],
+              "parameters": [
+                {
+                  "name": "emp",
+                  "type": "Employee"
+                }
+              ],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Department"
+            },
+            {
+              "name": "list_employees",
+              "description": "Prints the name of each employee in the department.",
+              "called_functions": [
+                "print"
+              ],
+              "parameters": [],
+              "return_type": "None",
+              "resolved_dependencies": [],
+              "qualified_name": null,
+              "class_name": "Department"
+            }
+          ]
+        }
+      ],
+      "globals": [],
+      "imports": [
+        "person"
+      ]
+    }
+  },
+  "dependency_graph": {
+    "Company.__init__": [],
+    "Company.add_department": [],
+    "Company.hire_employee": [
+      "inferred:dept.add_employee"
+    ],
+    "Person.__init__": [],
+    "Person.greet": [],
+    "Employee.__init__": [
+      null
+    ],
+    "Employee.work": [],
+    "Department.__init__": [],
+    "Department.add_employee": [
+      "inferred:append"
+    ],
+    "Department.list_employees": [
+      "inferred:print"
+    ]
+  }
+}
