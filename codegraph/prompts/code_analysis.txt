@@ -1,0 +1,42 @@
+Analyze the following code and extract structured information:
+
+```
+${code}
+```
+
+Return your analysis in JSON format with the following structure:
+{
+    "file_description": "brief description of what this file does",
+    "imports": ["list", "of", "imported", "files", "or", "modules"],
+    "functions": [
+        {
+            "name": "function_name",
+            "description": "what this function does",
+            "parameters": [{"name": "param1", "type": "int"}, ...],
+            "return_type": "return type",
+            "called_functions": ["list", "of", "other", "function", "names", "this", "calls"]
+        }
+    ],
+    "classes": [
+        {
+            "name": "class_name",
+            "description": "what this class does",
+            "methods": [
+                {
+                    "name": "method_name",
+                    "description": "what this method does",
+                    "parameters": [{"name": "param1", "type": "int"}, ...],
+                    "return_type": "return type",
+                    "called_functions": ["list", "of", "other", "function", "names", "this", "calls"]
+                }
+            ]
+        }
+    ],
+    "globals": [
+        {
+            "name": "global_name",
+            "description": "what this global variable is for",
+            "value": "its value if literal or simple expression"
+        }
+    ]
+}

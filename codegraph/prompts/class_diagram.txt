@@ -1,0 +1,13 @@
+Analyze the following class definitions and repository details in JSON format and infer the UML class diagram relationships, including inheritance, composition, aggregation, association, and multiplicity. Provide only the PlantUML code lines for these relationships/multiplicites/etc, e.g., do not output @startuml or @enduml, or class definitions for the classes. Start with ```plantuml
+
+-- Context --
+
+UML for Classes:
+
+{$uml_lines}
+
+Repository Data:
+
+{$repository}
+
+-- Your Output --

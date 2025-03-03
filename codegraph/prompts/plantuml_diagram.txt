@@ -1,0 +1,6 @@
+You are given the following JSON repository structure representing the codebase, including files, functions, classes, globals, and their descriptions:
+
+${repository}
+
+Generate a high-level PlantUML activity diagram (PlantUML syntax) that describes in natural language how the code works.
+Return only the PlantUML code.

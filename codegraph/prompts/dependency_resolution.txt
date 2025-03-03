@@ -1,0 +1,9 @@
+There are multiple implementations of the function '${function_name}'.
+
+${context}
+
+Implementations:
+${implementations}
+
+Based on this, which implementation is most likely being called?
+Return your answer as JSON: {"file": "most_likely_file_name"}
