@@ -6,6 +6,14 @@ DeepCodeGraph is an LLM agent that automatically generates UML and activity diag
 
 ## Installation
 
+Install using pip:
+
+```
+pip install deepcodegraph
+```
+
+Installation from source:
+
 ```
 git clone https://github.com/rhochgraf21/DeepCodeGraph/
 pip install -e codegraph
