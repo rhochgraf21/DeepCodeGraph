@@ -2,7 +2,7 @@
 
 DeepCodeGraph is an LLM agent that automatically generates UML and activity diagrams from codebases.
 
-![Example image of DeepCodeGraph UML diagram.](./examples/simple_oo_python.png)
+![Example image of DeepCodeGraph UML diagram.](https://raw.githubusercontent.com/rhochgraf21/DeepCodeGraph/main/examples/simple_oo_python.png)
 
 ## Installation
 
