@@ -64,7 +64,8 @@ def parse_args() -> argparse.Namespace:
         "--api-key",
         help="LLM API key (or set the CODEGRAPH_API_KEY env var or your provider's LiteLLM environment variables)",
     )
-    parser.add_argument("--provider", help="LLM provider to use (default: gemini)")
+    parser.add_argument(
+        "--provider", help="LLM provider to use (default: gemini)")
     parser.add_argument(
         "--model",
         help="Specific model to use with the provider (default: gemini-2.0-flash-exp)",
@@ -106,7 +107,8 @@ def parse_args() -> argparse.Namespace:
     )
 
     # Export command
-    export_parser = subparsers.add_parser("export", help="Export repository structure")
+    export_parser = subparsers.add_parser(
+        "export", help="Export repository structure")
     export_source = export_parser.add_mutually_exclusive_group(required=True)
     export_source.add_argument(
         "--github",
@@ -237,12 +239,12 @@ def handle_graph_command(
     if args.type in ["activity", "all"]:
         logging.info("Generating PlantUML activity diagram")
         plantuml_generator = PlantUMLActivityDiagram(provider)
-        print(scanner.generate_graph(plantuml_generator, args.output))
+        scanner.generate_graph(plantuml_generator, args.output)
 
     if args.type in ["uml", "all"]:
         logging.info("Generating PlantUML class diagram")
         plantuml_generator = PlantUMLClassDiagram(provider)
-        print(scanner.generate_graph(plantuml_generator, args.output))
+        scanner.generate_graph(plantuml_generator, args.output)
 
 
 def handle_export_command(scanner: RepositoryScanner, args: argparse.Namespace) -> None:
