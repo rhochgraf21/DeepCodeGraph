@@ -1,6 +1,6 @@
 # DeepCodeGraph 
 
-DeepCodeGraph is an LLM agent that automatically generates UML and activity diagrams from codebases.
+DeepCodeGraph is an LLM agent that automatically generates UML and activity diagrams from codebases using PlantUML.
 
 ![Example image of DeepCodeGraph UML diagram.](https://raw.githubusercontent.com/rhochgraf21/DeepCodeGraph/main/examples/simple_oo_python.png)
 
@@ -20,7 +20,7 @@ Below are the details on how to use the available commands and options.
 ### Commands
 
 - **graph**  
-  Visualize a repository’s dependency graph.
+  Visualize a repository’s dependency graph. Graphs are generated using the public [PlantUML server](https://www.plantuml.com/plantuml).
 
 - **export**  
   Export the repository’s structure for further analysis of the agent progress.
