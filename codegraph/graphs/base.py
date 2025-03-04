@@ -93,7 +93,7 @@ class PlantUMLBase(GraphGenerator):
         if response.status_code == 200:
             with open(output_file, "wb+") as f:
                 f.write(response.content)
-            print(f"Graph saved to {output_path}")
+            print(f"Graph saved to output directory {output_path}")
         else:
             raise Exception(
                 f"Failed to download graph image: Error {response.status_code}"
