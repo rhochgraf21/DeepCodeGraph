@@ -1,0 +1,7 @@
+You are given the following JSON repository structure representing the codebase, including files, functions, classes, globals, and their descriptions:
+
+{repository}
+
+Generate a high-level D2 diagram that describes the interactions and call flow of the code.
+Focus on representing the sequence of operations and how different parts of the code interact over time.
+Return only the D2 code, enclosed in ```d2 ... ```.

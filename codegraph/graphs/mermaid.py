@@ -1,33 +1,36 @@
 from codegraph.graphs.base import GraphGenerator
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional 
 import json
 import re
 import logging
 from pathlib import Path
 from datetime import datetime
-import subprocess # Added
-import shutil # Added
+import subprocess 
+import shutil 
 
 from codegraph.llm.provider import LLMProvider
 from codegraph.prompts.loader import PromptManager
 from codegraph.utils.helpers import create_directory_if_not_exists, sanitize_filename
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__) # Module-level logger, can be used if self.logger isn't preferred for some reason
 
 
 class MermaidDiagram(GraphGenerator):
     def __init__(
         self,
         llm_provider: LLMProvider,
+        diagram_type: str = "class", # New parameter
         token_limit: int = 128000,
         fallback_threshold: float = 0.9,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.llm_provider = llm_provider
+        self.diagram_type = diagram_type # Store it
+        self.format_name = "mermaid"     # Store format name
         self.token_limit = token_limit
         self.fallback_threshold = fallback_threshold
-        self.logger = logger
+        self.logger = logging.getLogger(__name__) # Ensure logger is initialized
 
     def _count_tokens(self, text: str) -> int:
         return len(text.split())
@@ -36,11 +39,12 @@ class MermaidDiagram(GraphGenerator):
         prompt_manager = PromptManager()
         serialized_data = json.dumps(repository_data, indent=2)
         tokens = self._count_tokens(serialized_data)
-        self.logger.info(f"Token count for MermaidDiagram: {tokens}")
+        # Use self.logger consistently
+        self.logger.info(f"Token count for {self.format_name} {self.diagram_type}: {tokens}")
 
         if tokens > self.token_limit * self.fallback_threshold:
             self.logger.info(
-                "Token count exceeds threshold for MermaidDiagram. "
+                f"Token count exceeds threshold for {self.format_name} {self.diagram_type}. "
                 "Generating diagram for the first file only (placeholder behavior)."
             )
             try:
@@ -48,18 +52,26 @@ class MermaidDiagram(GraphGenerator):
                 file_data = repository_data["files"][first_file_key]
                 prompt_input = json.dumps(file_data, indent=2)
             except StopIteration:
-                self.logger.warning("No files found in repository_data for MermaidDiagram.")
+                self.logger.warning(f"No files found in repository_data for {self.format_name} {self.diagram_type}.")
                 prompt_input = "{}"
         else:
             prompt_input = serialized_data
+        
+        # Dynamically select prompt based on diagram_type
+        prompt_name = f"{self.format_name}_{self.diagram_type}_diagram"
+        self.logger.info(f"Using prompt: {prompt_name}") # Log which prompt is used
 
         prompt = prompt_manager.format_prompt(
-            "mermaid_diagram", repository=prompt_input
+            prompt_name, repository=prompt_input
         )
 
         llm_response = self.llm_provider.query(prompt)
-        match = re.search(r"```mermaid\n(.*?)\n```", llm_response, re.DOTALL)
+        
+        # Extract Mermaid code (assuming it's wrapped in ```mermaid ... ```)
+        # Use re.IGNORECASE for mermaid tag
+        match = re.search(r"```mermaid\n(.*?)\n```", llm_response, re.DOTALL | re.IGNORECASE)
         mermaid_code = match.group(1) if match else llm_response.strip()
+
         return mermaid_code
 
     def save(self, graph: str, output_path: str, image_format: Optional[str] = None) -> None:
@@ -69,8 +81,10 @@ class MermaidDiagram(GraphGenerator):
         if Path(output_path).is_dir():
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             # Base filename for both .mmd and potential image
+            # Incorporate diagram_type into the filename if it's not the default "class"
+            type_suffix = f"_{self.diagram_type}" if self.diagram_type != "class" else ""
             base_filename = sanitize_filename(
-                f"dcg-{self.__class__.__name__}-{timestamp}"
+                f"dcg-{self.__class__.__name__}{type_suffix}-{timestamp}"
             )
             mmd_output_filename = f"{base_filename}.mmd"
             output_file = output_dir / mmd_output_filename # Path to .mmd file

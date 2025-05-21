@@ -1,6 +1,6 @@
 # DeepCodeGraph 
 
-DeepCodeGraph is an LLM agent that automatically generates diagrams from codebases, supporting PlantUML, Mermaid, Graphviz, and D2 formats, with options for local or web-based rendering for PlantUML.
+DeepCodeGraph is an LLM agent that automatically generates diagrams from codebases, supporting PlantUML, Mermaid, Graphviz, and D2 formats. It can produce both structural (class-like) and behavioral (activity-like) diagrams and offers options for local or web-based rendering for PlantUML.
 
 ![Example image of DeepCodeGraph UML diagram.](https://raw.githubusercontent.com/rhochgraf21/DeepCodeGraph/main/examples/simple_oo_python.png)
 
@@ -20,23 +20,23 @@ pip install -e .
 ```
 
 ### Dependencies for Local Image Rendering
-To generate images locally for certain diagram types (instead of just the text source files), you'll need to install additional tools:
+To generate images locally for the supported diagram types (instead of just the text source files), you'll need to install additional tools:
 
 - **Mermaid CLI (mmdc):** For rendering Mermaid diagrams (.mmd files) to SVG/PNG.
-  - Installation: `npm install -g @mermaid-js/mermaid-cli` (Requires Node.js)
+  - Installation: `npm install -g @mermaid-js/mermaid-cli` (Requires Node.js).
   - More info: [Mermaid CLI Documentation](https://github.com/mermaid-js/mermaid-cli)
 
 - **D2 CLI:** For rendering D2 diagrams (.d2 files) to SVG/PNG.
-  - Installation: Follow instructions at [D2 Official Install Guide](https://d2lang.com/tour/install) (typically involves a script or package manager).
+  - Installation: Follow instructions at [D2 Official Install Guide](https://d2lang.com/tour/install).
 
-- **Graphviz (dot):** For rendering Graphviz diagrams (.dot files) to SVG/PNG/etc. The Python `graphviz` library (added to `requirements.txt`) uses these tools.
-  - Installation: Usually available via system package managers (e.g., `sudo apt-get install graphviz` on Debian/Ubuntu, `brew install graphviz` on macOS).
+- **Graphviz (dot):** For rendering Graphviz diagrams (.dot files). The Python `graphviz` library (listed in `requirements.txt`) uses these tools.
+  - Installation: Via system package managers (e.g., `sudo apt-get install graphviz`, `brew install graphviz`).
   - More info: [Graphviz Download Page](https://graphviz.org/download/)
 
-- **PlantUML JAR (for local PlantUML rendering):** Required by the `pythonplantuml` library.
+- **PlantUML JAR (for local PlantUML rendering):** Required by the `pythonplantuml` library (listed in `requirements.txt`).
   - Download `plantuml.jar` from the [PlantUML Official Website](https://plantuml.com/download).
-  - Place it in a known location. The system will look for it by default at `/usr/local/bin/plantuml.jar`.
-  - Alternatively, you can specify its location using the `PLANTUML_JAR` environment variable:
+  - By default, the application expects it at `/usr/local/bin/plantuml.jar`.
+  - Alternatively, set the `PLANTUML_JAR` environment variable to its path:
     `export PLANTUML_JAR=/path/to/your/plantuml.jar`
 
 ## Usage
@@ -69,23 +69,26 @@ These options apply to all commands.
 DeepCodeGraph offers the following commands:
 
 #### `graph` Command
-Visualize a repository. Generates diagram source code (e.g., PlantUML, Mermaid, D2, Graphviz DOT) and can also render images locally for these formats if the required tools are installed. PlantUML can be rendered locally (default) or via the web service.
+Generates diagrams from a repository. Produces diagram source code and can render images locally if required tools are installed. Supports multiple diagram formats and types (class/activity).
 
 ##### Graph Command Options
 
-- `--path PATH`: **Required if not using `--github`.** Local filesystem path to your repository.
-- `--github GITHUB_URL`: **Required if not using `--path`.** URL of the GitHub repository to analyze.
-- `--output-format FORMAT`: Specify the diagram language/type.
-  - Choices: `plantuml-activity`, `plantuml-class`, `mermaid`, `graphviz`, `d2`.
-  - Default: `plantuml-class`.
-- `--image-format IMG_FORMAT`: Specify the output image format (e.g., `png`, `svg`).
-  - Default: `png`.
-  - Local rendering tools are required (see Installation section). PlantUML web service only produces PNG.
+- `--path PATH`: Local filesystem path to your repository. (Mutually exclusive with --github)
+- `--github GITHUB_URL`: URL of the GitHub repository to analyze. (Mutually exclusive with --path)
+- `--format DIAGRAM_FORMAT`: Specify the main diagram language/format.
+  - Choices: `plantuml`, `mermaid`, `graphviz`, `d2`.
+  - Default: `plantuml`.
+- `--diagram-type TYPE`: Specify the type of diagram to generate.
+  - Choices: `class`, `activity`.
+  - Default: `class`.
+  - Applies to all formats.
+- `--image-format IMG_FORMAT`: Specify the output image format for local rendering.
+  - Choices: `png`, `svg`. Default: `png`.
+  - Requires corresponding local rendering tools (see Installation section).
 - `--plantuml-service SERVICE`: For PlantUML diagrams, choose the rendering service.
   - Choices: `local`, `web`. Default: `local`.
-  - `local` requires `plantuml.jar` and `pythonplantuml` library.
-  - `web` uses the public PlantUML server.
-- `--extensions EXT_LIST`: Comma-separated list of file extensions to scan (e.g., `.py,.js`). Default: `.py,.js,.java,.cpp,.c,.h`.
+  - `local` requires `plantuml.jar` and `pythonplantuml` library. `web` uses the public PlantUML server (PNG only for web).
+- `--extensions EXT_LIST`: Comma-separated list of file extensions to scan. Default: `.py,.js,.java,.cpp,.c,.h`.
 - `--output DIR`: Directory to save generated graphs. Default: Current directory (`./`).
 
 #### `export` Command
@@ -96,7 +99,7 @@ Export the repository’s structure for further analysis of the agent progress.
 - `--path PATH`: **Required if not using `--github`.** Local filesystem path to your repository.
 - `--github GITHUB_URL`: **Required if not using `--path`.** URL of the GitHub repository to analyze.
 - `--extensions EXT_LIST`: Comma-separated list of file extensions to scan. Default: `.py,.js,.java,.cpp,.c,.h`.
-- `--format EXPORT_FORMAT`: Export format. Default: `json`.
+- `--format EXPORT_FORMAT`: Export format. Default: `json`. (Note: This `--format` is for the `export` command, distinct from the `graph` command's diagram format).
 - `--output FILE_PATH`: Output file path for the exported structure. **Required.**
 
 
@@ -104,17 +107,17 @@ Export the repository’s structure for further analysis of the agent progress.
 
 To generate a PlantUML class diagram for a local repository, rendered locally as an SVG:
 ```sh
-codegraph graph --path /path/to/repo --output-format plantuml-class --image-format svg --plantuml-service local
+codegraph graph --path /path/to/repo --format plantuml --diagram-type class --image-format svg --plantuml-service local
 ```
 
-To generate a Mermaid diagram for a GitHub repository, saving the `.mmd` source and attempting to render an SVG:
+To generate a Mermaid activity diagram for a GitHub repository, attempting to render an SVG:
 ```sh
-codegraph graph --github https://github.com/username/repository --output-format mermaid --image-format svg
+codegraph graph --github https://github.com/username/repository --format mermaid --diagram-type activity --image-format svg
 ```
 
-To analyze a GitHub repository and generate a PlantUML class diagram (default options for format and PlantUML service):
+To generate a D2 class diagram, saving the `.d2` source (image rendering will be attempted if D2 CLI is installed and an image format is specified):
 ```sh
-codegraph graph --github https://github.com/username/repository --output ./output_graphs
+codegraph graph --path /path/to/repo --format d2 --diagram-type class --image-format svg 
 ```
 
 Run `codegraph -h` for more detailed information on all commands and options.
