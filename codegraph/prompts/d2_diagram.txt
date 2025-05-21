@@ -1,0 +1,11 @@
+Generate a D2 diagram representing the following code structure.
+The diagram should depict relationships between classes, functions, and files as appropriate.
+Ensure the syntax is valid D2 language.
+
+Code structure:
+{repository}
+
+D2 diagram:
+```d2
+{{Output D2 code here}}
+```

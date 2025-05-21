@@ -17,6 +17,9 @@ from codegraph.llm.provider import LLMProvider, LLMProviderFactory
 from codegraph.prompts.loader import PromptManager
 from codegraph.scanner.repo_scan import RepositoryScanner
 from codegraph.graphs.plantuml import PlantUMLActivityDiagram, PlantUMLClassDiagram
+from codegraph.graphs.mermaid import MermaidDiagram
+from codegraph.graphs.graphviz import GraphvizDiagram
+from codegraph.graphs.d2 import D2Diagram
 
 
 def setup_logging(verbosity: int) -> None:
@@ -93,11 +96,11 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated list of file extensions to scan (default: .py,.js,.java,.cpp,.c,.h)",
     )
     scan_parser.add_argument(
-        "--type",
+        "--output-format",
         type=str,
-        choices=["plantuml", "uml-class", "all"],
-        default="all",
-        help="Type of graph to generate (default: all)",
+        choices=["plantuml-activity", "plantuml-class", "mermaid", "graphviz", "d2"],
+        default="plantuml-class", # Or another sensible default
+        help="Type of graph diagram to generate (default: plantuml-class)",
     )
     scan_parser.add_argument(
         "--output",
@@ -235,16 +238,29 @@ def handle_graph_command(
         args: Parsed command line arguments
     """
     os.makedirs(args.output, exist_ok=True)
-
-    if args.type in ["activity", "all"]:
+    generator = None
+    if args.output_format == "plantuml-activity":
         logging.info("Generating PlantUML activity diagram")
-        plantuml_generator = PlantUMLActivityDiagram(provider)
-        scanner.generate_graph(plantuml_generator, args.output)
-
-    if args.type in ["uml", "all"]:
+        generator = PlantUMLActivityDiagram(provider)
+    elif args.output_format == "plantuml-class":
         logging.info("Generating PlantUML class diagram")
-        plantuml_generator = PlantUMLClassDiagram(provider)
-        scanner.generate_graph(plantuml_generator, args.output)
+        generator = PlantUMLClassDiagram(provider)
+    elif args.output_format == "mermaid":
+        logging.info("Generating Mermaid diagram")
+        generator = MermaidDiagram(provider)
+    elif args.output_format == "graphviz":
+        logging.info("Generating Graphviz diagram")
+        generator = GraphvizDiagram(provider)
+    elif args.output_format == "d2":
+        logging.info("Generating D2 diagram")
+        generator = D2Diagram(provider)
+    else:
+        # This case should ideally not be reached if choices are enforced by argparse
+        logging.error(f"Unsupported graph format: {args.output_format}")
+        return
+
+    if generator:
+        scanner.generate_graph(generator, args.output)
 
 
 def handle_export_command(scanner: RepositoryScanner, args: argparse.Namespace) -> None:

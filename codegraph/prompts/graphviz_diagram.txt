@@ -1,0 +1,11 @@
+Generate a Graphviz diagram (DOT language) representing the following code structure.
+The diagram should depict relationships between classes, functions, and files as appropriate.
+Ensure the syntax is valid DOT language.
+
+Code structure:
+{repository}
+
+Graphviz (DOT language) diagram:
+```dot
+{{Output DOT code here}}
+```

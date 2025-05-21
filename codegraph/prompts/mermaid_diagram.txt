@@ -1,0 +1,11 @@
+Generate a Mermaid diagram representing the following code structure.
+The diagram should depict relationships between classes, functions, and files as appropriate.
+Ensure the syntax is valid Mermaid.
+
+Code structure:
+{repository}
+
+Mermaid diagram:
+```mermaid
+{{Output Mermaid code here}}
+```
