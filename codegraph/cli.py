@@ -103,6 +103,15 @@ def parse_args() -> argparse.Namespace:
         help="Type of graph diagram to generate (default: plantuml-class)",
     )
     scan_parser.add_argument(
+        "--image-format",
+        type=str,
+        choices=["png", "svg"], # Add more if other formats become relevant
+        default="png", # Default image output format
+        help="Format for the output image (if supported by the diagram type, default: png). "
+             "Note: PlantUML currently only generates PNGs. "
+             "For other types, requires respective local CLI tools (mmdc, dot, d2)."
+    )
+    scan_parser.add_argument(
         "--output",
         type=str,
         default="./",
@@ -260,7 +269,7 @@ def handle_graph_command(
         return
 
     if generator:
-        scanner.generate_graph(generator, args.output)
+        scanner.generate_graph(generator, args.output, image_format=args.image_format)
 
 
 def handle_export_command(scanner: RepositoryScanner, args: argparse.Namespace) -> None:

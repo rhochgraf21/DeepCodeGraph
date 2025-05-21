@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 import requests
 import zlib
+import logging # Added
 from pathlib import Path
 from datetime import datetime
 from codegraph.utils.helpers import create_directory_if_not_exists, sanitize_filename
@@ -35,7 +36,7 @@ class GraphGenerator(ABC):
         pass
 
     @abstractmethod
-    def save(self, graph: str, output_path: str) -> None:
+    def save(self, graph: str, output_path: str, image_format: Optional[str] = None) -> None:
         """
         Save the generated graph to a file.
 
@@ -61,43 +62,61 @@ class PlantUMLBase(GraphGenerator):
             plantuml_server: URL of the PlantUML server to use
         """
         self.plantuml_server = plantuml_server
+        # Initialize logger if not already done at module level for base classes
+        # For this specific change, ensuring logger is available for PlantUMLBase
+        self.logger = logging.getLogger(__name__)
 
-    def save(self, graph: str, output_path: str) -> None:
+
+    def save(self, graph: str, output_path: str, image_format: Optional[str] = None) -> None:
         """
         Save the generated PlantUML graph as an image.
 
         Args:
             graph: The generated PlantUML code
             output_path: Path to save the image to
+            image_format: Optional image format (e.g., "png", "svg"). Currently only supports "png".
         """
+        if image_format and image_format.lower() != 'png':
+            self.logger.warning("PlantUMLBase currently only supports PNG generation via public server. Proceeding with PNG.")
 
-        # Use the PlantUML compression algorithm
+        # The public server primarily supports png, svg, txt. Sticking to png for broad compatibility.
+        server_format = "png"
+        file_extension = ".png"
+
         encoded = self._encode_plantuml(graph)
-        url = f"{self.plantuml_server}/png/{encoded}"
+        url = f"{self.plantuml_server}/{server_format}/{encoded}"
 
-        # Ensure output directory exists
         output_dir = create_directory_if_not_exists(output_path)
 
-        # Generate a filename if the output_path is a directory
         if Path(output_path).is_dir():
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             output_filename = sanitize_filename(
-                f"dcg-{self.__class__.__name__}-{timestamp}.png"
+                f"dcg-{self.__class__.__name__}-{timestamp}{file_extension}"
             )
             output_file = output_dir / output_filename
         else:
             output_file = Path(output_path)
+            # Ensure the output file has the correct extension if a full path is given
+            if output_file.suffix.lower() != file_extension:
+                self.logger.info(f"Output path {output_path} does not have a {file_extension} extension. Modifying to save as {file_extension}.")
+                output_file = output_file.with_suffix(file_extension)
+            create_directory_if_not_exists(str(output_file.parent))
 
-        # Download the image
+
         response = requests.get(url)
         if response.status_code == 200:
             with open(output_file, "wb+") as f:
                 f.write(response.content)
-            print(f"Graph saved to output directory {output_path}")
+            self.logger.info(f"Graph saved to {output_file}")
         else:
+            self.logger.error(f"Failed to download graph image: Error {response.status_code} from {url}")
             raise Exception(
-                f"Failed to download graph image: Error {response.status_code}"
+                f"Failed to download graph image: Error {response.status_code} from {url}"
             )
+
+    # Add module-level logger (if not already present, though it makes more sense here or at the top)
+    # This was added to ensure logger is defined. If it's already at module top, this line is redundant.
+    # logger = logging.getLogger(__name__) # This should ideally be at the top of the file.
 
     @staticmethod
     def _encode6bit(b: int) -> str:

@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import tempfile
 import subprocess
-from typing import Dict, List, Tuple, Optional, Any, Protocol
+from typing import Dict, List, Tuple, Optional, Any, Protocol, Optional # Ensure Optional is imported
 import json
 
 from codegraph.domain.model import File, Function, Method, Class, Global, CodeElement
@@ -435,7 +435,7 @@ class RepositoryScanner:
             "dependency_graph": self.get_dependency_graph(),
         }
 
-    def generate_graph(self, graph_generator: GraphGenerator, file_path: str) -> str:
+    def generate_graph(self, graph_generator: GraphGenerator, file_path: str, image_format: Optional[str] = None) -> str: # Updated signature
         """
         Generate a graph using the provided graph generator.
 
@@ -446,7 +446,7 @@ class RepositoryScanner:
             Generated graph data (URL, filepath, etc.)
         """
         code = graph_generator.generate(self.export_repository_structure())
-        graph_generator.save(code, file_path)
+        graph_generator.save(code, file_path, image_format=image_format) # Pass image_format
 
     def _clone_github_repo(self, github_url: str) -> str:
         """
