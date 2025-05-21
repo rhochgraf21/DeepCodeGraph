@@ -85,34 +85,56 @@ class GraphvizDiagram(GraphGenerator):
         
         if image_format:
             try:
-                import graphviz # Try to import the library
+                # --- graphviz Library Usage ---
+                # Attempt to import the 'graphviz' Python library. This library provides an interface
+                # to the Graphviz layout engines (like dot, neato, etc.).
+                import graphviz 
                 
-                # Determine the final desired image path
+                # Determine the final desired image file path.
+                # e.g., if output_file is 'diagram.dot' and image_format is 'png', this will be 'diagram.png'.
                 image_output_file = output_file.with_suffix(f".{image_format.lower()}")
 
                 self.logger.info(f"Attempting to render Graphviz diagram to {image_output_file} using 'graphviz' library...")
                 
-                # Create Source object from the DOT string content, pass format directly
+                # `graphviz.Source(graph, format=...)`:
+                #   - Creates a Source object from the DOT language string (`graph`).
+                #   - `format`: Specifies the desired output format for the image (e.g., "png", "svg").
+                #     The library will use this to call the appropriate Graphviz engine.
                 s = graphviz.Source(graph, format=image_format.lower())
                 
-                # The 'filename' parameter for render should be the desired output filename *without* the extension.
-                # render will append the format as a suffix.
+                # `s.render(filename=..., view=False, cleanup=True)`:
+                #   - `filename`: The base name for the output file(s). The `graphviz` library
+                #                 will append the format suffix (e.g., '.png') to this name.
+                #                 We provide the path without the suffix.
+                #   - `view=False`: Prevents the rendered graph from being automatically opened in a viewer.
+                #   - `cleanup=True`: Removes the intermediate DOT file that the library creates
+                #                   during rendering, keeping only the final image.
                 s.render(filename=str(image_output_file.with_suffix('')), view=False, cleanup=True)
 
+                # Check if the rendering was successful and the file was created.
                 if image_output_file.exists():
                     self.logger.info(f"Graphviz image successfully saved to {image_output_file}")
                 else:
+                    # This case might occur if render() doesn't throw an error but still fails to create the file.
                     self.logger.error(f"Graphviz image file not found at expected path: {image_output_file} after rendering. Check Graphviz library behavior.")
 
             except ImportError:
+                # --- ImportError Handling ---
+                # This block is executed if the 'graphviz' Python library is not installed.
+                # It logs a warning and skips image generation, as the necessary library is missing.
                 self.logger.warning(
                     "The 'graphviz' Python library is not installed. Skipping image generation. "
                     "Please install it (e.g., 'pip install graphviz') and ensure Graphviz tools are in PATH."
                 )
-            except graphviz.ExecutableNotFound: # Specific exception for missing executables
+            except graphviz.ExecutableNotFound:
+                # --- graphviz.ExecutableNotFound Handling ---
+                # This specific exception from the 'graphviz' library is raised if the underlying
+                # Graphviz executables (e.g., 'dot', 'neato') are not found in the system's PATH.
+                # Even if the Python library is installed, the core Graphviz tools must also be installed.
                 self.logger.error(
                     "Graphviz executables (e.g., 'dot') not found in PATH. Skipping image generation. "
                     "Please ensure Graphviz is installed and configured correctly."
                 )
             except Exception as e:
+                # Catch any other unexpected errors during the rendering process.
                 self.logger.error(f"An error occurred while rendering Graphviz image: {e}")

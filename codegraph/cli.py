@@ -20,6 +20,7 @@ from codegraph.graphs.plantuml import PlantUMLActivityDiagram, PlantUMLClassDiag
 from codegraph.graphs.mermaid import MermaidDiagram
 from codegraph.graphs.graphviz import GraphvizDiagram
 from codegraph.graphs.d2 import D2Diagram
+from codegraph.graphs.plantuml_local import PlantUMLLocalActivityDiagram, PlantUMLLocalClassDiagram
 
 
 def setup_logging(verbosity: int) -> None:
@@ -99,23 +100,31 @@ def parse_args() -> argparse.Namespace:
         "--output-format",
         type=str,
         choices=["plantuml-activity", "plantuml-class", "mermaid", "graphviz", "d2"],
-        default="plantuml-class", # Or another sensible default
-        help="Type of graph diagram to generate (default: plantuml-class)",
+        default="plantuml-class",
+        # Purpose: Specifies the syntax and type of the diagram to be generated.
+        help="Type of graph diagram to generate (e.g., plantuml-class, mermaid). Determines the diagramming language and style.",
     )
     scan_parser.add_argument(
         "--image-format",
         type=str,
-        choices=["png", "svg"], # Add more if other formats become relevant
-        default="png", # Default image output format
-        help="Format for the output image (if supported by the diagram type, default: png). "
-             "Note: PlantUML currently only generates PNGs. "
-             "For other types, requires respective local CLI tools (mmdc, dot, d2)."
+        choices=["png", "svg"], 
+        default="png", 
+        # Purpose: Defines the output file format for the rendered image (if image generation is supported).
+        help="Format for the output image (e.g., png, svg). Relevant for diagram types that support local rendering to an image.",
     )
     scan_parser.add_argument(
         "--output",
         type=str,
         default="./",
         help="Directory to save generated graphs (default: current directory)",
+    )
+    scan_parser.add_argument(
+        "--plantuml-service",
+        type=str,
+        choices=["local", "web"],
+        default="local",
+        # Purpose: Allows choosing between local PlantUML rendering (requires a JAR) and using the public web service.
+        help="PlantUML service to use. 'local' requires a PlantUML JAR for local rendering; 'web' uses the public PlantUML server.",
     )
 
     # Export command
@@ -248,23 +257,44 @@ def handle_graph_command(
     """
     os.makedirs(args.output, exist_ok=True)
     generator = None
+    # --- Graph Generator Selection ---
+    # This section determines which graph generator class to use based on the
+    # user-specified '--output-format' and, for PlantUML, '--plantuml-service'.
+
+    # PlantUML Activity Diagram
     if args.output_format == "plantuml-activity":
-        logging.info("Generating PlantUML activity diagram")
-        generator = PlantUMLActivityDiagram(provider)
+        if args.plantuml_service == "local":
+            # Use local rendering for PlantUML activity diagrams.
+            logging.info("Generating PlantUML activity diagram using local service.")
+            generator = PlantUMLLocalActivityDiagram(provider)
+        else: # args.plantuml_service == "web"
+            # Use web service for PlantUML activity diagrams.
+            logging.info("Generating PlantUML activity diagram using web service.")
+            generator = PlantUMLActivityDiagram(provider)
+    # PlantUML Class Diagram
     elif args.output_format == "plantuml-class":
-        logging.info("Generating PlantUML class diagram")
-        generator = PlantUMLClassDiagram(provider)
+        if args.plantuml_service == "local":
+            # Use local rendering for PlantUML class diagrams.
+            logging.info("Generating PlantUML class diagram using local service.")
+            generator = PlantUMLLocalClassDiagram(provider)
+        else: # args.plantuml_service == "web"
+            # Use web service for PlantUML class diagrams.
+            logging.info("Generating PlantUML class diagram using web service.")
+            generator = PlantUMLClassDiagram(provider)
+    # Mermaid Diagram
     elif args.output_format == "mermaid":
         logging.info("Generating Mermaid diagram")
         generator = MermaidDiagram(provider)
+    # Graphviz Diagram
     elif args.output_format == "graphviz":
         logging.info("Generating Graphviz diagram")
         generator = GraphvizDiagram(provider)
+    # D2 Diagram
     elif args.output_format == "d2":
         logging.info("Generating D2 diagram")
         generator = D2Diagram(provider)
     else:
-        # This case should ideally not be reached if choices are enforced by argparse
+        # Fallback for unsupported graph formats (though argparse choices should prevent this).
         logging.error(f"Unsupported graph format: {args.output_format}")
         return
 

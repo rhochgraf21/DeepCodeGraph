@@ -1,6 +1,6 @@
 # DeepCodeGraph 
 
-DeepCodeGraph is an LLM agent that automatically generates UML and activity diagrams from codebases using PlantUML.
+DeepCodeGraph is an LLM agent that automatically generates diagrams from codebases, supporting PlantUML, Mermaid, Graphviz, and D2 formats, with options for local or web-based rendering for PlantUML.
 
 ![Example image of DeepCodeGraph UML diagram.](https://raw.githubusercontent.com/rhochgraf21/DeepCodeGraph/main/examples/simple_oo_python.png)
 
@@ -16,8 +16,28 @@ Installation from source:
 
 ```
 git clone https://github.com/rhochgraf21/DeepCodeGraph/
-pip install -e codegraph
+pip install -e .
 ```
+
+### Dependencies for Local Image Rendering
+To generate images locally for certain diagram types (instead of just the text source files), you'll need to install additional tools:
+
+- **Mermaid CLI (mmdc):** For rendering Mermaid diagrams (.mmd files) to SVG/PNG.
+  - Installation: `npm install -g @mermaid-js/mermaid-cli` (Requires Node.js)
+  - More info: [Mermaid CLI Documentation](https://github.com/mermaid-js/mermaid-cli)
+
+- **D2 CLI:** For rendering D2 diagrams (.d2 files) to SVG/PNG.
+  - Installation: Follow instructions at [D2 Official Install Guide](https://d2lang.com/tour/install) (typically involves a script or package manager).
+
+- **Graphviz (dot):** For rendering Graphviz diagrams (.dot files) to SVG/PNG/etc. The Python `graphviz` library (added to `requirements.txt`) uses these tools.
+  - Installation: Usually available via system package managers (e.g., `sudo apt-get install graphviz` on Debian/Ubuntu, `brew install graphviz` on macOS).
+  - More info: [Graphviz Download Page](https://graphviz.org/download/)
+
+- **PlantUML JAR (for local PlantUML rendering):** Required by the `pythonplantuml` library.
+  - Download `plantuml.jar` from the [PlantUML Official Website](https://plantuml.com/download).
+  - Place it in a known location. The system will look for it by default at `/usr/local/bin/plantuml.jar`.
+  - Alternatively, you can specify its location using the `PLANTUML_JAR` environment variable:
+    `export PLANTUML_JAR=/path/to/your/plantuml.jar`
 
 ## Usage
 
@@ -25,15 +45,9 @@ The `codegraph` tool is designed to analyze your code repositories by generating
 
 Below are the details on how to use the available commands and options.
 
-### Commands
-
-- **graph**  
-  Visualize a repository’s dependency graph. Graphs are generated using the public [PlantUML server](https://www.plantuml.com/plantuml).
-
-- **export**  
-  Export the repository’s structure for further analysis of the agent progress.
-
 ### Global Options
+
+These options apply to all commands.
 
 - `-h, --help`  
   Show a help message and exit.
@@ -50,29 +64,60 @@ Below are the details on how to use the available commands and options.
 - `--model MODEL`  
   Specify the model to use with the provider. The default is `gemini-2.0-flash-exp`.
 
-- `--path PATH`  
-  **Required if not using `--github`.** Provide the local filesystem path to your repository.
+### Commands
 
-- `--github GITHUB_URL`  
-  **Required if not using `--path`.** Provide the URL of the GitHub repository to analyze.
+DeepCodeGraph offers the following commands:
 
-### Example
+#### `graph` Command
+Visualize a repository. Generates diagram source code (e.g., PlantUML, Mermaid, D2, Graphviz DOT) and can also render images locally for these formats if the required tools are installed. PlantUML can be rendered locally (default) or via the web service.
 
-To generate a dependency graph for a local repository located at `/path/to/repo`, run:
+##### Graph Command Options
 
+- `--path PATH`: **Required if not using `--github`.** Local filesystem path to your repository.
+- `--github GITHUB_URL`: **Required if not using `--path`.** URL of the GitHub repository to analyze.
+- `--output-format FORMAT`: Specify the diagram language/type.
+  - Choices: `plantuml-activity`, `plantuml-class`, `mermaid`, `graphviz`, `d2`.
+  - Default: `plantuml-class`.
+- `--image-format IMG_FORMAT`: Specify the output image format (e.g., `png`, `svg`).
+  - Default: `png`.
+  - Local rendering tools are required (see Installation section). PlantUML web service only produces PNG.
+- `--plantuml-service SERVICE`: For PlantUML diagrams, choose the rendering service.
+  - Choices: `local`, `web`. Default: `local`.
+  - `local` requires `plantuml.jar` and `pythonplantuml` library.
+  - `web` uses the public PlantUML server.
+- `--extensions EXT_LIST`: Comma-separated list of file extensions to scan (e.g., `.py,.js`). Default: `.py,.js,.java,.cpp,.c,.h`.
+- `--output DIR`: Directory to save generated graphs. Default: Current directory (`./`).
+
+#### `export` Command
+Export the repository’s structure for further analysis of the agent progress.
+
+##### Export Command Options
+
+- `--path PATH`: **Required if not using `--github`.** Local filesystem path to your repository.
+- `--github GITHUB_URL`: **Required if not using `--path`.** URL of the GitHub repository to analyze.
+- `--extensions EXT_LIST`: Comma-separated list of file extensions to scan. Default: `.py,.js,.java,.cpp,.c,.h`.
+- `--format EXPORT_FORMAT`: Export format. Default: `json`.
+- `--output FILE_PATH`: Output file path for the exported structure. **Required.**
+
+
+### Examples
+
+To generate a PlantUML class diagram for a local repository, rendered locally as an SVG:
 ```sh
-codegraph graph --path /path/to/repo
+codegraph graph --path /path/to/repo --output-format plantuml-class --image-format svg --plantuml-service local
 ```
 
-To analyze a GitHub repository, run:
-
+To generate a Mermaid diagram for a GitHub repository, saving the `.mmd` source and attempting to render an SVG:
 ```sh
-codegraph graph --github https://github.com/username/repository
+codegraph graph --github https://github.com/username/repository --output-format mermaid --image-format svg
 ```
 
-Run `codegraph -h` for more detailed information.
+To analyze a GitHub repository and generate a PlantUML class diagram (default options for format and PlantUML service):
+```sh
+codegraph graph --github https://github.com/username/repository --output ./output_graphs
+```
 
-**Note:** You must provide either the `--path` option (for local repositories) or the `--github` option (for GitHub repositories). The GitHub functionality is provided to analyze repositories hosted on GitHub.
+Run `codegraph -h` for more detailed information on all commands and options.
 
 ## Supported Providers
 

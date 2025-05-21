@@ -91,52 +91,59 @@ class MermaidDiagram(GraphGenerator):
             raise
         
         if image_format:
+            # --- mmdc CLI Check ---
+            # shutil.which("mmdc") checks if the 'mmdc' (Mermaid CLI tool) executable is
+            # available in the system's PATH. This is crucial for local image rendering.
+            # If mmdc is not found, a warning is logged, and image generation is skipped.
             if not shutil.which("mmdc"):
                 self.logger.warning(
                     "Mermaid CLI (mmdc) not found in PATH. Skipping image generation. "
-                    "Please install it to generate Mermaid images locally."
+                    "Please install it to generate Mermaid images locally (e.g., npm install -g @mermaid-js/mermaid-cli)."
                 )
                 return # Exit if mmdc is not found, after saving the .mmd
 
-            # Determine image output file path
+            # Determine image output file path.
+            # If output_path was a directory, image_output_file will be like '.../timestamp.svg'.
+            # If output_path was a specific file, image_output_file will be that path with the correct image extension.
             if Path(output_path).is_dir():
-                # output_file is already .../timestamp.mmd
-                # image_output_file should be .../timestamp.svg (or .png)
                 image_output_file = output_file.with_suffix(f".{image_format.lower()}")
             else:
-                # output_path was a specific file path e.g. /path/to/diagram.svg or /path/to/diagram
-                # output_file is /path/to/diagram.mmd
-                # image_output_file should be original output_path if suffix matches image_format,
-                # or output_path with new suffix.
                 original_output_path = Path(output_path)
-                if original_output_path.suffix.lower() == f".{image_format.lower()}":
+                if original_output_path.suffix[1:].lower() == image_format.lower():
                     image_output_file = original_output_path
                 else:
                     image_output_file = original_output_path.with_suffix(f".{image_format.lower()}")
 
+            # --- mmdc Command Construction ---
+            # The command for mmdc is constructed as follows:
+            #   `mmdc -i <input_mmd_file> -o <output_image_file>`
+            # - `-i`: Specifies the input Mermaid definition file (.mmd).
+            # - `-o`: Specifies the output file for the rendered image. The format (e.g., PNG, SVG)
+            #         is typically inferred by mmdc from the output file's extension.
             cli_command = [
                 "mmdc",
-                "-i",
-                str(output_file),         # Input .mmd file
-                "-o",
-                str(image_output_file),   # Output image file
+                "-i", str(output_file),         # Input .mmd file path
+                "-o", str(image_output_file),   # Output image file path
             ]
-            # According to mmdc docs, -f is for puppeteerConfigFile, not format.
-            # Format is typically inferred from output file extension.
-            # If explicit format control is needed (e.g. for stdout), -e <format> is used.
-            # For file output, -o with correct extension is usually sufficient.
-
+            
             self.logger.info(f"Attempting to render Mermaid diagram to {image_output_file} using mmdc...")
             try:
+                # --- mmdc Execution ---
+                # subprocess.run executes the constructed mmdc command.
+                # - `capture_output=True`: Captures stdout and stderr.
+                # - `text=True`: Decodes stdout and stderr as text.
+                # - `check=False`: Does not raise an exception for non-zero exit codes,
+                #                  allowing for manual error handling based on `process.returncode`.
                 process = subprocess.run(cli_command, capture_output=True, text=True, check=False)
                 if process.returncode == 0:
                     self.logger.info(f"Mermaid image successfully saved to {image_output_file}")
                 else:
+                    # Log detailed error information if mmdc fails.
                     self.logger.error(
                         f"Failed to generate Mermaid image with mmdc. Return code: {process.returncode}\n"
                         f"Stdout: {process.stdout}\nStderr: {process.stderr}"
                     )
-            except FileNotFoundError: # Should be caught by shutil.which, but as a fallback
-                self.logger.error("mmdc command not found. Please ensure it is installed and in your PATH.")
+            except FileNotFoundError: # This case should ideally be caught by shutil.which.
+                self.logger.error("mmdc command not found, though shutil.which might have indicated otherwise. Ensure mmdc is correctly installed and in PATH.")
             except Exception as e:
                 self.logger.error(f"An error occurred while running mmdc: {e}")

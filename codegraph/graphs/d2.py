@@ -5,8 +5,8 @@ import re
 import logging
 from pathlib import Path
 from datetime import datetime
-import subprocess # Added
-import shutil # Added
+import subprocess 
+import shutil 
 
 from codegraph.llm.provider import LLMProvider
 from codegraph.prompts.loader import PromptManager
@@ -71,7 +71,7 @@ class D2Diagram(GraphGenerator):
                 f"dcg-{self.__class__.__name__}-{timestamp}"
             )
             d2_output_filename = f"{base_filename}.d2"
-            output_file = output_dir / d2_output_filename # Path to .d2 file
+            output_file = output_dir / d2_output_filename 
         else:
             output_file_path = Path(output_path)
             create_directory_if_not_exists(str(output_file_path.parent))
@@ -86,6 +86,10 @@ class D2Diagram(GraphGenerator):
             raise
             
         if image_format:
+            # --- d2 CLI Check ---
+            # shutil.which("d2") checks if the 'd2' command-line tool executable is
+            # available in the system's PATH. This is essential for local D2 diagram rendering.
+            # If 'd2' is not found, a warning is logged, and image generation is skipped.
             if not shutil.which("d2"):
                 self.logger.warning(
                     "D2 CLI (d2) not found in PATH. Skipping image generation. "
@@ -93,36 +97,48 @@ class D2Diagram(GraphGenerator):
                 )
                 return # Exit if d2 is not found, after saving the .d2 file
 
-            # D2 derives the output format from the output file's extension.
-            # So, image_output_file needs to have the correct extension.
+            # D2 infers the output image format from the extension of the output file.
+            # Thus, image_output_file is set to have the extension specified by image_format (e.g., ".svg", ".png").
             image_output_file = output_file.with_suffix(f".{image_format.lower()}")
             
+            # --- d2 Command Construction ---
+            # The command for the D2 CLI is typically: `d2 <input_d2_file> <output_image_file>`
+            #   - `<input_d2_file>`: Path to the D2 definition file (.d2).
+            #   - `<output_image_file>`: Path where the rendered image should be saved. D2 uses this
+            #                            file's extension to determine the output format.
+            # An optional layout engine can be specified with `--layout <engine_name>` (e.g., "elk", "dagre").
+            # Default is "dagre". We omit it here to use the default.
             cli_command = [
                 "d2",
-                # "--layout", "elk", # Optional: specify layout engine if needed, default is dagre
+                # "--layout", "elk", # Example: uncomment to use ELK layout engine
                 str(output_file),         # Input .d2 file path
-                str(image_output_file),   # Output image file path
+                str(image_output_file),   # Output image file path (e.g., diagram.svg)
             ]
 
             self.logger.info(f"Attempting to render D2 diagram to {image_output_file} using d2 CLI...")
             try:
+                # --- d2 CLI Execution ---
+                # subprocess.run executes the D2 command.
+                # - `capture_output=True`: Captures stdout and stderr.
+                # - `text=True`: Decodes stdout and stderr as text.
+                # - `check=False`: Prevents raising an exception for non-zero exit codes,
+                #                  allowing for custom handling of errors based on `process.returncode`.
                 process = subprocess.run(cli_command, capture_output=True, text=True, check=False)
                 if process.returncode == 0:
-                    # D2 CLI might print "Generating [theme name] [output_path]..." to stdout on success
-                    # and might not print anything for some formats if successful.
-                    # Stderr might contain theme loading errors even on success for some OS/setups.
-                    # So, primary check is returncode.
+                    # D2 CLI might produce output to stdout/stderr even on success (e.g., theme loading messages).
+                    # The most reliable check for success is the exit code (0) and the existence of the output file.
                     if image_output_file.exists():
                          self.logger.info(f"D2 image successfully saved to {image_output_file}")
                     else:
+                         # This case handles scenarios where d2 exits cleanly but the file isn't created.
                          self.logger.warning(f"D2 CLI reported success (code 0) but output file {image_output_file} not found. CLI output:\nStdout: {process.stdout}\nStderr: {process.stderr}")
-
                 else:
+                    # Log detailed error information if d2 CLI fails.
                     self.logger.error(
                         f"Failed to generate D2 image with d2 CLI. Return code: {process.returncode}\n"
                         f"Stdout: {process.stdout}\nStderr: {process.stderr}"
                     )
-            except FileNotFoundError: # Should be caught by shutil.which, but as a fallback
-                self.logger.error("D2 CLI (d2) command not found. Please ensure it is installed and in your PATH.")
+            except FileNotFoundError: # This should ideally be caught by shutil.which.
+                self.logger.error("D2 CLI (d2) command not found, though shutil.which might have indicated otherwise. Ensure d2 is correctly installed and in PATH.")
             except Exception as e:
                 self.logger.error(f"An error occurred while running d2 CLI: {e}")
