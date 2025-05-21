@@ -33,11 +33,12 @@ To generate images locally for the supported diagram types (instead of just the 
   - Installation: Via system package managers (e.g., `sudo apt-get install graphviz`, `brew install graphviz`).
   - More info: [Graphviz Download Page](https://graphviz.org/download/)
 
-- **PlantUML JAR (for local PlantUML rendering):** Required by the `pythonplantuml` library (listed in `requirements.txt`).
-  - Download `plantuml.jar` from the [PlantUML Official Website](https://plantuml.com/download).
-  - By default, the application expects it at `/usr/local/bin/plantuml.jar`.
-  - Alternatively, set the `PLANTUML_JAR` environment variable to its path:
-    `export PLANTUML_JAR=/path/to/your/plantuml.jar`
+- **PlantUML Local Rendering (Java and plantuml.jar):**
+  - **Java Runtime Environment (JRE):** Java must be installed and the `java` executable must be in your system's PATH. OpenJDK or Oracle JDK are suitable.
+  - **`plantuml.jar`:** Download `plantuml.jar` from the [PlantUML Official Website](https://plantuml.com/download).
+    - Place it in a known location. The system will look for it by default at `/usr/local/bin/plantuml.jar`.
+    - Alternatively, you can specify its location using the `PLANTUML_JAR` environment variable:
+      `export PLANTUML_JAR=/path/to/your/plantuml.jar`
 
 ## Usage
 
@@ -87,7 +88,7 @@ Generates diagrams from a repository. Produces diagram source code and can rende
   - Requires corresponding local rendering tools (see Installation section).
 - `--plantuml-service SERVICE`: For PlantUML diagrams, choose the rendering service.
   - Choices: `local`, `web`. Default: `local`.
-  - `local` requires `plantuml.jar` and `pythonplantuml` library. `web` uses the public PlantUML server (PNG only for web).
+  - `local` requires Java and `plantuml.jar` (see Installation section). `web` uses the public PlantUML server (PNG only for web).
 - `--extensions EXT_LIST`: Comma-separated list of file extensions to scan. Default: `.py,.js,.java,.cpp,.c,.h`.
 - `--output DIR`: Directory to save generated graphs. Default: Current directory (`./`).
 
