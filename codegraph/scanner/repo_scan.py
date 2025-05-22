@@ -441,7 +441,9 @@ class RepositoryScanner:
 
     def get_dependency_graph(self) -> Dict:
         graph = {}
-        for file_path in self.files.keys():  # Iterate over files that are currently part of the scan
+        for file_path in self.files.keys():
+            # Iterate over files that are currently part of the scan
+            print(f"resolving functions in {file_path}...")
             # Process functions in this file
             for func_name, func_map_for_file_path in self.functions_map.items():
                 if file_path in func_map_for_file_path:  # Check if the function belongs to the current file
