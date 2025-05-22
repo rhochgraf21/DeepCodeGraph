@@ -95,16 +95,33 @@ class Method(Function):
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Method':
+        class_name = data.get('class_name')
+        method_name = data.get('name', 'Unknown MethodName') # Get name safely for error message
+
+        if class_name is None:
+            # Consider adding logging here if a logger is available for model classes
+            # For now, directly raise ValueError as specified.
+            raise ValueError(f"Method data missing 'class_name' for method '{method_name}'. Input data: {data}")
+        
+        # Assuming 'name' is mandatory for Method __init__ as per its typical structure.
+        # If 'name' could be missing and needs a default for __init__, it should be data.get('name', default_name)
+        # but the prompt indicates data['name'] is acceptable if 'name' is mandatory.
+        # The primary focus is on class_name validation.
+        if 'name' not in data:
+             # If 'name' is truly mandatory and can be missing, this would be a good place for an error.
+             # However, following prompt to focus on class_name and assuming 'name' is usually present.
+             pass # Or raise ValueError("Method data missing 'name'.")
+
         method = cls(
-            data['name'],
-            data.get('description', ''),
-            data['class_name'], 
-            data.get('called_functions', []),
-            data.get('parameters', []),
-            data.get('return_type')
+            name=data['name'],  # Assuming 'name' will be present as per typical JSON structure
+            description=data.get('description', ''),
+            class_name=class_name, 
+            called_functions=data.get('called_functions', []),
+            parameters=data.get('parameters', []),
+            return_type=data.get('return_type')
         )
         method.qualified_name = data.get('qualified_name')
-        method.resolved_dependencies = []
+        method.resolved_dependencies = [] 
         return method
 
 
@@ -196,12 +213,6 @@ class File:
         # Order of operations: functions, classes, globals must be added *after* file_obj is created.
         # The File.__init__ should not call add_function etc.
         # from_dict should populate these lists directly after creating the File instance.
-        
-        # Correct approach for File.from_dict regarding lists of objects:
-        # Create the basic File object first
-        # file_obj = cls(name=data['name'], description=data.get('description', ''), content_hash=data.get('content_hash'))
-        # file_obj.raw_code = data.get('raw_code', '') # If raw_code is part of export/import
-        # file_obj.imports = data.get('imports', [])
         
         # Then populate its lists:
         file_obj.functions = []

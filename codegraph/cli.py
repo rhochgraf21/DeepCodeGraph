@@ -11,7 +11,7 @@ import sys
 import argparse
 import json
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any # Updated import
 
 from codegraph.llm.provider import LLMProvider, LLMProviderFactory
 from codegraph.prompts.loader import PromptManager
@@ -264,13 +264,6 @@ def handle_scan_command(scanner: RepositoryScanner, args: argparse.Namespace, ex
         args: Parsed command line arguments, providing repository source (path/github) and extensions.
         existing_data: Optional. A dictionary representing a previously exported repository structure.
                        If provided, enables incremental scanning.
-    """
-    extensions = tuple(args.extensions.split(","))
-    logging.info(f"Scanning with extensions: {extensions}")
-
-    Args:
-        scanner: Repository scanner instance
-        args: Parsed command line arguments
     """
     extensions = tuple(args.extensions.split(","))
     logging.info(f"Scanning with extensions: {extensions}")
