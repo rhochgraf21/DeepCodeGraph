@@ -10,6 +10,7 @@ import re
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
+import hashlib # Added
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +56,37 @@ def sanitize_filename(filename: str) -> str:
     """
     # Replace invalid characters with underscores
     return re.sub(r'[\\/*?:"<>|]', "_", filename)
+
+
+def calculate_file_hash(filepath: Path, hash_algo: str = "sha256") -> str:
+    """
+    Calculate the hash of a file's content.
+
+    Args:
+        filepath: Path to the file.
+        hash_algo: The hashing algorithm to use (default: "sha256").
+                   Can be any algorithm supported by hashlib.
+
+    Returns:
+        Hexadecimal string representation of the hash.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        IOError: If the file cannot be read.
+    """
+    h = hashlib.new(hash_algo)
+    try:
+        with open(filepath, "rb") as f:
+            while True:
+                # Read file in chunks to handle large files efficiently
+                chunk = f.read(8192) # 8KB chunks
+                if not chunk:
+                    break
+                h.update(chunk)
+        return h.hexdigest()
+    except FileNotFoundError:
+        logger.error(f"File not found when calculating hash: {filepath}")
+        raise
+    except IOError as e:
+        logger.error(f"IOError when calculating hash for {filepath}: {e}")
+        raise

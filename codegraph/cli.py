@@ -132,6 +132,15 @@ def parse_args() -> argparse.Namespace:
         # Purpose: Allows choosing between local PlantUML rendering (requires a JAR) and using the public web service.
         help="PlantUML service to use. 'local' requires a PlantUML JAR for local rendering; 'web' uses the public PlantUML server.",
     )
+    scan_parser.add_argument( # Added for graph command
+        "--input-db",
+        type=str,
+        metavar="FILEPATH.JSON",
+        default=None,
+        # Purpose: Allows the graph command to use a previously exported JSON DB for incremental scanning.
+        # This can speed up processing by only analyzing changed or new files.
+        help="Optional path to an existing DB JSON file to use for incremental scanning and caching."
+    )
 
     # Export command
     export_parser = subparsers.add_parser(
@@ -161,6 +170,15 @@ def parse_args() -> argparse.Namespace:
     )
     export_parser.add_argument(
         "--output", type=str, required=True, help="Output file path"
+    )
+    export_parser.add_argument(
+        "--input-db",
+        type=str,
+        metavar="FILEPATH.JSON",
+        default=None, # Explicitly None if not provided
+        # Purpose: Allows the export command to load an existing JSON DB, perform an incremental scan,
+        # and then output the updated DB. This avoids re-analyzing unchanged files.
+        help="Optional path to an existing DB JSON file. If provided, the export will update this DB."
     )
 
     return parser.parse_args()
@@ -232,9 +250,23 @@ def get_model(args: argparse.Namespace) -> Optional[str]:
     return model
 
 
-def handle_scan_command(scanner: RepositoryScanner, args: argparse.Namespace) -> None:
+def handle_scan_command(scanner: RepositoryScanner, args: argparse.Namespace, existing_data: Optional[Dict[str, Any]] = None) -> None:
     """
-    Handle the 'scan' command to analyze a code repository.
+    Perform the repository scan, potentially using existing data for caching.
+
+    This function is called by both `graph` and `export` command handlers.
+    It populates the `scanner` instance with data from the specified repository path or GitHub URL.
+    If `existing_data` (a previously exported JSON structure) is provided, the scanner
+    will use it to perform an incremental scan, only analyzing new or changed files.
+
+    Args:
+        scanner: The `RepositoryScanner` instance to use for scanning.
+        args: Parsed command line arguments, providing repository source (path/github) and extensions.
+        existing_data: Optional. A dictionary representing a previously exported repository structure.
+                       If provided, enables incremental scanning.
+    """
+    extensions = tuple(args.extensions.split(","))
+    logging.info(f"Scanning with extensions: {extensions}")
 
     Args:
         scanner: Repository scanner instance
@@ -245,10 +277,10 @@ def handle_scan_command(scanner: RepositoryScanner, args: argparse.Namespace) ->
 
     if args.github:
         logging.info(f"Scanning GitHub repository: {args.github}")
-        scanner.scan_github_repo(args.github, extensions=extensions)
+        scanner.scan_github_repo(args.github, extensions=extensions, existing_data=existing_data)
     elif args.path:
         logging.info(f"Scanning local directory: {args.path}")
-        scanner.scan_codebase(args.path, extensions=extensions)
+        scanner.scan_codebase(args.path, extensions=extensions, existing_data=existing_data)
 
 
 def handle_graph_command(
@@ -306,15 +338,42 @@ def handle_export_command(scanner: RepositoryScanner, args: argparse.Namespace) 
 
     Args:
         scanner: Repository scanner instance
-        args: Parsed command line arguments
+        args: Parsed command line arguments for the 'export' command.
     """
+    existing_data: Optional[Dict[str, Any]] = None
+    # --- Load Existing DB for Export Update ---
+    # If --input-db is provided, load the JSON file. This data will be passed to
+    # scan_codebase/scan_github_repo for incremental processing.
+    # Errors during loading (file not found, JSON decode error) are logged, and
+    # `existing_data` remains None, leading to a full scan.
+    if args.input_db:
+        try:
+            with open(args.input_db, 'r', encoding='utf-8') as f_db:
+                existing_data = json.load(f_db)
+            logging.info(f"Loaded existing DB from {args.input_db} for export update.")
+        except FileNotFoundError:
+            logging.warning(f"Input DB file {args.input_db} not found for export. Proceeding with a full scan.")
+        except json.JSONDecodeError:
+            logging.error(f"Error decoding JSON from input DB {args.input_db} for export. Proceeding with a full scan.")
+            existing_data = None 
+        except Exception as e:
+            logging.error(f"Failed to load input DB {args.input_db} for export: {e}. Proceeding with a full scan.")
+            existing_data = None 
+
+    # Perform the scan. If `existing_data` was loaded, this will be an incremental scan.
+    # The `scanner` object will be populated with the (potentially updated) repository structure.
+    handle_scan_command(scanner, args, existing_data=existing_data)
+    
+    # Export the (potentially updated) repository structure from the scanner.
     logging.info(f"Exporting repository structure to {args.output}")
     repo_structure = scanner.export_repository_structure()
 
-    if args.format == "json":
+    if args.format == "json": # args.format here refers to the export_parser's format argument
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(repo_structure, f, indent=2)
         logging.info(f"Repository structure exported to {args.output}")
+    else:
+        logging.error(f"Unsupported export format: {args.format}. Only JSON is currently supported for export.")
 
 
 def main() -> None:
@@ -344,10 +403,42 @@ def main() -> None:
 
         # Handle commands
         if args.command == "graph":
-            handle_scan_command(scanner, args)
-            handle_graph_command(scanner, provider, args)
+            existing_data_for_graph: Optional[Dict[str, Any]] = None
+            # --- Load Existing DB for Graph Command (Caching) ---
+            # If --input-db is provided for the 'graph' command, attempt to load it.
+            # This data enables incremental scanning, where only new or changed files are analyzed by the LLM.
+            if args.input_db: 
+                try:
+                    with open(args.input_db, 'r', encoding='utf-8') as f_db:
+                        existing_data_for_graph = json.load(f_db)
+                    logging.info(f"Loaded existing DB for graph command from {args.input_db}")
+                except FileNotFoundError:
+                    logging.warning(f"Input DB file {args.input_db} not found for graph command. Proceeding with a full scan.")
+                except json.JSONDecodeError:
+                    logging.error(f"Error decoding JSON from input DB {args.input_db} for graph command. Proceeding with a full scan.")
+                    existing_data_for_graph = None 
+                except Exception as e:
+                    logging.error(f"Failed to load input DB {args.input_db} for graph command: {e}. Proceeding with a full scan.")
+                    existing_data_for_graph = None 
+            
+            # Perform the scan, using `existing_data_for_graph` if it was loaded.
+            # The `scanner` instance will be populated, and `scanner.actual_llm_scans_performed` will be set.
+            handle_scan_command(scanner, args, existing_data=existing_data_for_graph) 
+            
+            # --- No-Change Detection for Graph Command ---
+            # If an input DB was provided (`args.input_db` is not None) AND
+            # the scanner indicates that no actual LLM scans were performed in this run
+            # (meaning all relevant files were found in the cache and were unchanged),
+            # then graph generation can be skipped to save time and resources.
+            if args.input_db and not scanner.actual_llm_scans_performed:
+                logging.info("No relevant file changes detected since the last scan (from DB). Skipping graph generation.")
+            else:
+                # Otherwise (full scan or changes detected), proceed to generate the graph.
+                handle_graph_command(scanner, provider, args) 
         elif args.command == "export":
-            handle_scan_command(scanner, args)
+            # For the 'export' command, `handle_scan_command` (which handles `existing_data` loading)
+            # is called *within* `handle_export_command`.
+            # to allow existing_data to be loaded first.
             handle_export_command(scanner, args)
         else:
             print("No command specified. Use -h for help.")
