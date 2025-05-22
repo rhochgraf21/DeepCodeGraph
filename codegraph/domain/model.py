@@ -3,7 +3,7 @@
 Domain Model Classes
 -------------------------------
 
-This module provides classes to represent key portions of code used in the 
+This module provides classes to represent key portions of code used in the
 abstract AST.
 """
 from typing import Dict, List, Optional, Any  # Ensure Any is present
@@ -136,8 +136,10 @@ class Class(CodeElement):
         super().__init__(name, description)
         self.methods = methods or []
 
-    def add_method(self, method: Method):
+    def add_method(self, method: Method) -> Method:
+        method.qualified_name = f"{self.name}:{method.name}"
         self.methods.append(method)
+        return method
 
     def to_dict(self) -> Dict:
         result = super().to_dict()
@@ -149,7 +151,7 @@ class Class(CodeElement):
         class_obj = cls(data['name'], data.get('description', ''))
         for m_data in data.get('methods', []):
             m_data['class_name'] = class_obj.name
-            class_obj.methods.append(Method.from_dict(m_data))
+            class_obj.add_method(Method.from_dict(m_data))
         return class_obj
 
 
@@ -186,15 +188,20 @@ class File:
         # List of imported file/module names
         self.imports: List[str] = imports or []
 
-    def add_function(self, function: Function):
+    def add_function(self, function: Function) -> Function:
         function.qualified_name = f"{self.name}:{function.name}"
         self.functions.append(function)
+        return function
 
-    def add_class(self, cls: Class):
+    def add_class(self, cls: Class) -> Class:
+        cls.qualified_name = f"{self.name}:{cls.name}"
         self.classes.append(cls)
+        return cls
 
-    def add_global(self, glob: Global):
+    def add_global(self, glob: Global) -> Global:
+        glob.qualified_name = f"{self.name}:{glob.name}"
         self.globals.append(glob)
+        return glob
 
     def to_dict(self) -> Dict:
         return {
@@ -226,11 +233,10 @@ class File:
         for func_data in data.get('functions', []):
             func = Function.from_dict(func_data)
             # Set qualified_name here
-            func.qualified_name = f"{file_obj.name}:{func.name}"
-            file_obj.functions.append(func)
+            file_obj.add_function(func)
 
-        file_obj.classes = [Class.from_dict(c_data)
-                            for c_data in data.get('classes', [])]
-        file_obj.globals = [Global.from_dict(
-            g_data) for g_data in data.get('globals', [])]
+        for c_data in data.get('classes', []):
+            file_obj.add_class(Class.from_dict(c_data))
+        for g_data in data.get('globals', []):
+            file_obj.add_global(Global.from_dict(g_data))
         return file_obj

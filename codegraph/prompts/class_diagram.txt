@@ -1,4 +1,9 @@
-Analyze the following class definitions and repository details in JSON format and infer the UML class diagram relationships, including inheritance, composition, aggregation, association, and multiplicity. Provide only the PlantUML code lines for these relationships/multiplicites/etc, e.g., do not output @startuml or @enduml, or class definitions for the classes. Start with ```plantuml
+Analyze the following class definitions and repository details. 
+Your task is to complete the plantuml diagram by adding to the existing uml lines.
+Complete the plantuml diagram, inferring from the repository things such as classes, methods, fields, relationships, inheritance, composition, aggregation, association, and multiplicity. Provide only the PlantUML code lines for these relationships/multiplicites/etc, e.g., do not output @startuml or @enduml, or class definitions for the classes.
+You must include methods, fields, and relationships.
+
+Start with ```plantuml
 
 -- Context --
 

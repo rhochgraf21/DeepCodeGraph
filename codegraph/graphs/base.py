@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 import requests
 import zlib
-import logging # Added
+import logging  # Added
 from pathlib import Path
 from datetime import datetime
 from codegraph.utils.helpers import create_directory_if_not_exists, sanitize_filename
@@ -66,7 +66,6 @@ class PlantUMLBase(GraphGenerator):
         # For this specific change, ensuring logger is available for PlantUMLBase
         self.logger = logging.getLogger(__name__)
 
-
     def save(self, graph: str, output_path: str, image_format: Optional[str] = None) -> None:
         """
         Save the generated PlantUML graph as an image using a public PlantUML web service.
@@ -97,11 +96,10 @@ class PlantUMLBase(GraphGenerator):
             )
 
         # Use 'png' for the server URL as it's the most reliably supported format for images.
-        server_request_format = "png" 
+        server_request_format = "png"
         # However, use the user's requested image_format for the file extension,
         # or default to '.png' if none was specified or if it was something else.
         output_file_extension = f".{(image_format or 'png').lower()}"
-
 
         encoded = self._encode_plantuml(graph)
         # Construct the URL to fetch the PNG image from the PlantUML server.
@@ -112,7 +110,8 @@ class PlantUMLBase(GraphGenerator):
         if Path(output_path).is_dir():
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             output_filename = sanitize_filename(
-                f"dcg-{self.__class__.__name__}-{timestamp}{output_file_extension}" # Use determined extension
+                # Use determined extension
+                f"dcg-{self.__class__.__name__}-{timestamp}{output_file_extension}"
             )
             output_file = output_dir / output_filename
         else:
@@ -121,10 +120,10 @@ class PlantUMLBase(GraphGenerator):
             # If the user specified 'diagram.svg', it should save as 'diagram.svg'.
             # If they specified 'diagram' and image_format is 'svg', it should be 'diagram.svg'.
             if output_file.suffix.lower() != output_file_extension:
-                self.logger.info(f"Output path '{output_path}' suffix does not match requested/default format '{output_file_extension}'. Adjusting to '{output_file.stem}{output_file_extension}'.")
+                self.logger.info(
+                    f"Output path '{output_path}' suffix does not match requested/default format '{output_file_extension}'. Adjusting to '{output_file.stem}{output_file_extension}'.")
                 output_file = output_file.with_suffix(output_file_extension)
             create_directory_if_not_exists(str(output_file.parent))
-
 
         response = requests.get(url)
         if response.status_code == 200:
@@ -132,7 +131,8 @@ class PlantUMLBase(GraphGenerator):
                 f.write(response.content)
             self.logger.info(f"Graph saved to {output_file}")
         else:
-            self.logger.error(f"Failed to download graph image: Error {response.status_code} from {url}")
+            self.logger.error(
+                f"Failed to download graph image: Error {response.status_code} from {url}")
             raise Exception(
                 f"Failed to download graph image: Error {response.status_code} from {url}"
             )

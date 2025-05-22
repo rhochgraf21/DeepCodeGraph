@@ -96,7 +96,8 @@ class PlantUMLActivityDiagram(PlantUMLBase):
         plantuml_response = self.llm_provider.query(prompt)
 
         # Extract the PlantUML code
-        match = re.search(r"```plantuml\n(.*?)\n```", plantuml_response, re.DOTALL)
+        match = re.search(r"```plantuml\n(.*?)\n```",
+                          plantuml_response, re.DOTALL)
         plantuml_code = match.group(1) if match else plantuml_response.strip()
 
         return plantuml_code
@@ -143,7 +144,7 @@ class PlantUMLClassDiagram(PlantUMLBase):
         classes = {}
 
         # Collect classes from each file
-        for file_name, file_data in repository_data["files"].items():
+        for file_name, file_data in repository_data.items():
             for cls in file_data.get("classes", []):
                 classes[cls["name"]] = cls
 
@@ -169,7 +170,8 @@ class PlantUMLClassDiagram(PlantUMLBase):
             uml_lines.append("}")
 
         # Add relationships based on inheritance and composition patterns
-        uml_lines = self._add_relationships(uml_lines, classes, repository_data)
+        uml_lines = self._add_relationships(
+            uml_lines, classes, repository_data)
 
         uml_lines.append("@enduml")
         return "\n".join(uml_lines)
@@ -189,7 +191,8 @@ class PlantUMLClassDiagram(PlantUMLBase):
         )
         plantuml_response = self.llm_provider.query(prompt)
 
-        match = re.search(r"```plantuml\n(.*?)\n```", plantuml_response, re.DOTALL)
+        match = re.search(r"```plantuml\n(.*?)\n```",
+                          plantuml_response, re.DOTALL)
         plantuml_code = match.group(1) if match else plantuml_response.strip()
 
         uml_lines += plantuml_code.splitlines()

@@ -279,7 +279,7 @@ def handle_scan_command(scanner: RepositoryScanner, args: argparse.Namespace, ex
 
 
 def handle_graph_command(
-    scanner: RepositoryScanner, provider: LLMProvider, args: argparse.Namespace
+    scanner: RepositoryScanner, provider: LLMProvider, args: argparse.Namespace, existing_data: Optional[Dict[str, Any]] = None
 ) -> None:
     """
     Handle the 'graph' command to generate diagrams.
@@ -325,7 +325,7 @@ def handle_graph_command(
 
     if generator:
         scanner.generate_graph(generator, args.output,
-                               image_format=args.image_format)
+                               image_format=args.image_format, existing_data=existing_data)
 
 
 def handle_export_command(scanner: RepositoryScanner, args: argparse.Namespace) -> None:
@@ -405,15 +405,19 @@ def main() -> None:
 
         # Handle commands
         if args.command == "graph":
-            existing_data_for_graph: Optional[Dict[str, Any]] = None
+            existing_files: Optional[Dict[str, Any]] = None
+            existing_dep: Optional[Dict[str, Any]] = None
+            existing_full: Optional[Dict[str, Any]] = None
             # --- Load Existing DB for Graph Command (Caching) ---
             # If --input-db is provided for the 'graph' command, attempt to load it.
             # This data enables incremental scanning, where only new or changed files are analyzed by the LLM.
             if args.input_db:
                 try:
                     with open(args.input_db, 'r', encoding='utf-8') as f_db:
-                        existing_data_for_graph = json.load(f_db)
-                        existing_data_for_graph = existing_data_for_graph["files"]
+                        existing_full = json.load(f_db)
+                        existing_dep = existing_full["dependency_graph"]
+                        existing_files = existing_full["files"]
+
                     logging.info(
                         f"Loaded existing DB for graph command from {args.input_db}")
                 except FileNotFoundError:
@@ -422,16 +426,16 @@ def main() -> None:
                 except json.JSONDecodeError:
                     logging.error(
                         f"Error decoding JSON from input DB {args.input_db} for graph command. Proceeding with a full scan.")
-                    existing_data_for_graph = None
+                    existing_files = None
                 except Exception as e:
                     logging.error(
                         f"Failed to load input DB {args.input_db} for graph command: {e}. Proceeding with a full scan.")
-                    existing_data_for_graph = None
+                    existing_files = None
 
             # Perform the scan, using `existing_data_for_graph` if it was loaded.
             # The `scanner` instance will be populated, and `scanner.actual_llm_scans_performed` will be set.
             handle_scan_command(
-                scanner, args, existing_data=existing_data_for_graph)
+                scanner, args, existing_data=existing_files)
 
             # --- No-Change Detection for Graph Command ---
             # If an input DB was provided (`args.input_db` is not None) AND
@@ -442,7 +446,8 @@ def main() -> None:
                 print(
                     "No relevant file changes detected since the last scan.")
             # Otherwise (full scan or changes detected), proceed to generate the graph.
-            handle_graph_command(scanner, provider, args)
+            handle_graph_command(scanner, provider, args,
+                                 existing_data=existing_full)
         elif args.command == "export":
             # For the 'export' command, `handle_scan_command` (which handles `existing_data` loading)
             # is called *within* `handle_export_command`.

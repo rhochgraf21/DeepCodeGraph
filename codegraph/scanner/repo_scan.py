@@ -482,8 +482,10 @@ class RepositoryScanner:
             "dependency_graph": self.get_dependency_graph(),
         }
 
-    def generate_graph(self, graph_generator: GraphGenerator, file_path: str, image_format: Optional[str] = None) -> str:
-        code = graph_generator.generate(self.export_repository_structure())
+    def generate_graph(self, graph_generator: GraphGenerator, file_path: str, image_format: Optional[str] = None, existing_data: Optional[Dict[str, Any]] = None) -> str:
+        repo_structure = self.export_repository_structure(
+        ) if not existing_data else existing_data
+        code = graph_generator.generate(repository_data=repo_structure)
         graph_generator.save(code, file_path, image_format=image_format)
 
     def _clone_github_repo(self, github_url: str) -> str:
